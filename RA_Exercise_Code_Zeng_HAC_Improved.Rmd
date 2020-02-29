@@ -1,0 +1,208 @@
+---
+title: "MIT Sloan Finance - Technical Exercise"
+author: "Yan Bo Zeng"
+date: "February 12, 2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, message=FALSE, warning=FALSE}
+library(readr)
+library(readxl)
+## "fredr" package can automate the data collection from FRED.
+## However, I did not have an activated Researcher API.
+library(fredr)
+library(dplyr)
+library(tidyr)
+library(sandwich)
+library(lmtest)
+```
+
+
+## Data Handling
+```{r, message=FALSE, warning=FALSE}
+## Read in datasets
+ford_tfp <- read_csv("ford_tfp.csv")
+quarterly_tfp <- read_excel("quarterly_tfp.xlsx", sheet = "quarterly",
+                            skip = 1)[, c("date","dtfp_util")]
+ie_data <- read_excel("ie_data.xls", sheet = "Data", skip = 7)[, 1:2]
+
+CNP16OV <- read_csv("CNP16OV.csv")
+GDP <- read_csv("GDP.csv")
+GDPDEF <- read_csv("GDPDEF.csv")
+HOANBS <- read_csv("HOANBS.csv")
+PCE <- read_csv("PCE.csv")
+PNFI <- read_csv("PNFI.csv")
+
+## Time Series Conversion + Name change
+## a frequency of 4 indicates a quarterly series
+ford_tfp <- ts(ford_tfp$ford_tfp, start = 1949, frequency = 4)
+d_tfp <- ts(quarterly_tfp$dtfp_util, start = 1947, frequency = 4)
+## a frequency of 12 indicates a monthly series
+stock_prices <- ts(ie_data$P, start = 1871, frequency = 12)
+
+population <- ts(CNP16OV$CNP16OV, start = 1948, frequency = 12)
+GDP <- ts(GDP$GDP, start = 1947, frequency = 4)
+GDP_deflator <- ts(GDPDEF$GDPDEF, start = 1947, frequency = 4)
+hours <- ts(HOANBS$HOANBS, start = 1947, frequency = 4)
+consumption <- ts(PCE$PCE, start = 1959, frequency = 12)
+investment <- ts(PNFI$PNFI, start = 1947, frequency = 4)
+
+## Convert monthly datasets into quarterly average sets
+stock_prices <- aggregate(stock_prices, nfrequency = 4,
+                          FUN = mean) %>% window(start = 1947)
+population <- aggregate(population, nfrequency = 4, FUN = mean)
+consumption <- aggregate(consumption, nfrequency = 4, FUN = mean)
+
+## Merge datasets
+data <- ts.union(ford_tfp, d_tfp, stock_prices, population,
+                 GDP, GDP_deflator, hours, consumption, investment)
+```
+
+
+## Data Processing
+```{r, message=FALSE, warning=FALSE}
+## compute a log real per-capita version of GDP, consumption,
+## non-residential investment, and stock prices
+## Multiply each series by 100 so that it is expressed in percent.
+denominator <- data[, "population"] * data[, "GDP_deflator"]
+
+ln_re_pc_GDP <- log(data[, "GDP"] / denominator) * 100
+ln_re_pc_consumption <- log(data[, "consumption"] / denominator) * 100
+ln_re_pc_investment <- log(data[, "investment"] / denominator) * 100
+ln_re_pc_stock_prices <- log(data[, "stock_prices"] / denominator) * 100
+
+## Compute log hours per capita by dividing hours by population,
+## taking logs, and multiplying by 100.
+ln_pc_hours <- log(data[, "hours"] / data[, "population"]) * 100
+
+## Compute log real labor productivity by dividing GDP by hours and the
+## GDP deflator, taking logs, and multiplying by 100
+denominator <- data[, "hours"] * data[, "GDP_deflator"]
+ln_re_lab_prod <- log(data[, "GDP"] / denominator) * 100
+```
+
+
+## Local Projection Function
+```{r, message=FALSE, warning=FALSE}
+## Please only use time series with correctly matched time stamps.
+
+lp <- function(depend_var, shock_var, control1, control2, control3, h) {
+        
+        outcome <- lead(depend_var, h) ## outcome ahead by h horizons
+        
+        shock1 <- stats::lag(shock_var, 1) ## shock - lag 1
+        shock2 <- stats::lag(shock_var, 2) ## shock - lag 2
+        control1_lag <- stats::lag(control1, 1) ## control variable 1 - lag 1
+        control2_lag <- stats::lag(control2, 1) ## control variable 2 - lag 1
+        depend_lag <- stats::lag(depend_var, 1) ## dependent - lag 1
+        
+        if(missing(control3)) {
+                model_mat <- ts.union(outcome, shock_var, shock1, shock2,
+                                      depend_lag, control1_lag, control2_lag)
+                return(lm(outcome~., data = model_mat))
+        }
+        
+        control3_lag <- stats::lag(control3, 1) ## control variable 3 - lag 1
+        
+        model_mat <- ts.union(outcome, shock_var, shock1, shock2, depend_lag,
+                                      control1_lag, control2_lag, control3_lag)
+        
+        return(lm(outcome~., data = model_mat))
+}
+```
+
+
+## Plot Function
+```{r, message=FALSE, warning=FALSE}
+plot_lp <- function(depend_var, shock_var, control1, control2,
+                    control3, h = 20, conf_level = 0.667, main) {
+        results <- 0:h
+        HAC <- 0:h
+        
+        ## If there is NOT a 3rd control variable
+        if(missing(control3)) {
+                for(i in 0:h) {
+                        model <- lp(depend_var, shock_var, control1,
+                                    control2, h = i)
+                        ## Coefficient for current shock
+                        results[i+1] <- model$coefficients[2]
+                        ## HAC standard errors at each horizon
+                        HAC[i+1] <- NeweyWest(model, lag = i,
+                                              prewhite = FALSE)[2,2] %>% sqrt()
+                        }
+                plot(results, main = main, type = "l", col = "red",
+                     lwd = 1.5, ylab = "Impulse Response", xlab = "Horizon")
+                lines(results + qnorm(conf_level/2) * HAC, col = "blue")
+                lines(results - qnorm(conf_level/2) * HAC, col = "blue")
+        } else { ## If there is a 3rd control variable
+                for(i in 0:h) {
+                model <- lp(depend_var, shock_var, control1, control2,
+                            control3, h = i)
+                results[i+1] <- model$coefficients[2]
+                HAC[i+1] <- NeweyWest(model, lag = i, prewhite = FALSE)[2,2] %>% sqrt()
+                }
+                
+                plot(results, main = main, type = "l", col = "red",
+                     lwd = 1.5, ylab = "Impulse Response", xlab = "Horizon")
+                lines(results + qnorm(conf_level/2) * HAC, col = "blue")
+                lines(results - qnorm(conf_level/2) * HAC, col = "blue")
+        }
+}
+```
+
+
+
+## log real GDP per capita
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
+plot_lp(ln_re_pc_GDP, ford_tfp, ln_re_pc_stock_prices, ln_re_lab_prod,
+        main = "FORD TFP - log real GDP per capita")
+plot_lp(ln_re_pc_GDP, d_tfp, ln_re_pc_stock_prices, ln_re_lab_prod,
+        main = "Fernald TFP - log real GDP per capita")
+```
+
+
+## log labor productivity
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
+plot_lp(ln_re_lab_prod, ford_tfp, ln_re_pc_GDP, ln_re_pc_stock_prices,
+        main = "FORD TFP - log labor productivity")
+plot_lp(ln_re_lab_prod, d_tfp, ln_re_pc_GDP, ln_re_pc_stock_prices,
+        main = "Fernald TFP - log labor productivity")
+```
+
+
+## log real stock prices per capita
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
+plot_lp(ln_re_pc_stock_prices, ford_tfp, ln_re_pc_GDP, ln_re_lab_prod,
+        main = "FORD TFP - log real stock prices per capita")
+plot_lp(ln_re_pc_stock_prices, d_tfp, ln_re_pc_GDP, ln_re_lab_prod,
+        main = "Fernald TFP - log real stock prices per capita")
+```
+
+
+## log real consumption per capita
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
+plot_lp(ln_re_pc_consumption, ford_tfp, ln_re_pc_GDP, ln_re_pc_stock_prices,
+        ln_re_lab_prod, main = "FORD TFP - log real consumption per capita")
+plot_lp(ln_re_pc_consumption, d_tfp, ln_re_pc_GDP, ln_re_pc_stock_prices,
+        ln_re_lab_prod, main = "Fernald TFP - log real consumption per capita")
+```
+
+
+## log nonresidential investment per capita
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
+plot_lp(ln_re_pc_investment, ford_tfp, ln_re_pc_GDP, ln_re_pc_stock_prices,
+        ln_re_lab_prod, main = "FORD TFP - log nonresidential investment per capita")
+plot_lp(ln_re_pc_investment, d_tfp, ln_re_pc_GDP, ln_re_pc_stock_prices,
+        ln_re_lab_prod, main = "Fernald TFP - log nonresidential investment per capita")
+```
+
+
+## Economic interpretation
+
+The TFP shocks, on average, would stimulate a positive response from real GDP per capita. From the plots for both FORD and Fernald series, we are able to see the upward trending in the percentage change in GDP per capita, yet this positive response grows at a diminishing rate as the horizon stretches – It culminates/ peaks at a horizon of 12-14 quarters or 3-3.5 years, and then begins reverting back to zero. This is true for both kinds of TFP shocks and indicates that the stimulated response (a growth) of real GDP per capita to TFP shocks is not instant but gradual. The confidence bands tell us this response is significantly greater than zero.
+
+The percentage change in labor productivity reacts differently against the two TFP shocks – It fluctuates between 0 and negative 0.15% in response to the FORD TFP, but fluctuates above zero in response to the Fernald TFP. A similar behavior can be viewed from the percentage change in stock prices per capita, which goes downward below zero when the FORD TFP presents and grows above zero at a diminishing rate, peaking at 0.8% after 7-8 quarters of a Fernald TFP. This reveals that TFP shocks might stimulate the economy (measured by real GDP, consumption, and investment per capita) but sometimes suppress real labor productivity and real capital productivity (measured by real stock prices per capita).
