@@ -21,4 +21,4 @@ skills I learned from it.
 data analysis and statistical learning. I would like to thank Annie Lee and Mellissa Perez for their contributions in the
 background research and final presentation.
 
-"tic_tac_toe": Type play() on the console to start a tic tac toe game. Please first execute the entire script.
+"R_tic_tac_toe": Type play() on the console to start a tic tac toe game. Please first execute the entire script.
