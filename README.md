@@ -9,7 +9,7 @@ different series of shocks to total factor productivity, and visualizing the res
 It is originally an RA task submitted to Professor Emil Verner of MIT Sloan. I also reused it for my current research
 project at Volatility and Risk Institute of NYU Stern.
 
-For this task, I had to thoroughly understand the novel econometric idea and begin implementing it as soon as I finish studying
+For this task, I had to thoroughly understand a new econometric idea and begin implementing it as soon as I finish studying
 the papers and conference lectures. Before writing the code, I replicated the mathematical derivation and logical
 flow introduced in the papers by hand. I started simple but with a high degree of rigorousness. The code was then written
 in such a way that it should be reusable for a different application. I also emphasized the use of flexible programming
