@@ -17,7 +17,6 @@ and subroutines and minimized copying and pasting. It took me hours to debug for
 how lag, lead, and NeweyWest functions work with different time series objects in R. I am happy for the experience and technical
 skills I learned from it.
 
-
 "Python Coding Sample" is a final project report for an undergraduate data science course. It shows my familiarity in Python for
 data analysis and statistical learning. I would like to thank Annie Lee and Mellissa Perez for their contributions in the
 background research and final presentation.
