@@ -2,7 +2,7 @@
 *Check for uninstalled packages.
 local required_ados calipmatch carryforward gtools ftools winsor2 psmatch2 binscatter ///
 	statastates unique estout frameappend fs strkeep distinct rangejoin rangestat ///
-	geonear isvar cibar egenmore grc1leg2 colrspace palettes heatplot rcspline cdfplot ///
+	geonear isvar cibar /*egenmore*/ grc1leg2 colrspace palettes heatplot rcspline cdfplot ///
 	mylabels binscatter2 texresults spineplot coefplot nearmrg geodist missings
 
 foreach x in `required_ados' {
