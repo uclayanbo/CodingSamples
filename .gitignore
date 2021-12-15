@@ -1,0 +1,5 @@
+*.DS_Store
+*.log
+*.Rhistory
+*.vscode
+*.ipynb_checkpoints
