@@ -1,11 +1,10 @@
 v 1
 d
-d texresults2: Stata program.
+d texresults2: Stata program
 d
 d Author: Yan Bo Zeng, UCLA Anderson School of Management
 d Support: yanbozeng2015@ucla.edu
 d
-d A variant of texresults (Alvaro Carril) that has an option to suppress the $ signs.
 d
 d Distribution-Date: 20220228
 d
