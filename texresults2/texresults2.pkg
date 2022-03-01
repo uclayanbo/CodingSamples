@@ -1,5 +1,5 @@
-v 3
-
+v 1
+d
 d texresults2: Stata program.
 d
 d Author: Yan Bo Zeng, UCLA Anderson School of Management
@@ -9,4 +9,4 @@ d This do-file defines "texresults2", a variant of texresults (Alvaro Carril) th
 d
 d Distribution-Date: 20220228
 d
-f texresults2.ado
+F texresults2.ado

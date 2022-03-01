@@ -1,0 +1,4 @@
+v 1
+
+d Yan Bo Zeng, UCLA Anderson School of Management (yanbozeng2015@ucla.edu)
+p texresults2
