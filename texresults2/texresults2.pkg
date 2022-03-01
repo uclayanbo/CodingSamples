@@ -1,11 +1,9 @@
-v 1
-d
+v 1.0
+
 d texresults2: Stata program
-d
+
 d Author: Yan Bo Zeng, UCLA Anderson School of Management
 d Support: yanbozeng2015@ucla.edu
-d
-d
 d Distribution-Date: 20220228
-d
-F texresults2.ado
+
+f texresults2.ado
