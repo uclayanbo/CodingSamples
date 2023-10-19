@@ -8,7 +8,7 @@ Subfolders in this repository contain Stata, Python, and R coding samples I made
 
 #### Python
 - `Python_functions.py` defines the core functions we use to predict the occupancy rate for each facility based on the patient’s and facility's characteristics for the paper "Picking Your Patients: Selective Admissions in the Nursing Home Industry."
-- #HCRIS# is a technical Python project I wrote recently. Functions defined in `HCRIScleaning.py` are designed to convert the raw, long-format Healthcare Provider Cost Reporting Information System (HCRIS) data into a usable, wide-format panel. Please see `make_HCRIS_raw.py` as an example of how the functions work.
+- ##HCRIS## is a technical Python project I wrote recently. Functions defined in `HCRIScleaning.py` are designed to convert the raw, long-format Healthcare Provider Cost Reporting Information System (HCRIS) data into a usable, wide-format panel. Please see `make_HCRIS_raw.py` as an example of how the functions work.
 
 #### R - Bayesian Interpretation of Ratings
 This folder contains a research note excerpt from a project on how a Bayesian consumer should interpret the star ratings for General Practitioners in the UK. Please see `RA_Sample_Exercise.pdf` for a detailed description and `RA_Exercise_report.Rmd` for my write-up in R.
